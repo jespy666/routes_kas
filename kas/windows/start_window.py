@@ -1,95 +1,197 @@
-from tkinter import *
+import tkinter as tk
 from tkinter.ttk import Combobox
 import json
 import os
 from kas.user_data import USER_DIR
-from kas.database.vehicles import VEHICLES
 from kas.windows.days_window import DaysWindow
+from PIL import Image, ImageTk
+from tkinter import messagebox
 
 
 class MainWindow:
 
-    def __init__(self, width, height, title='Routes Calculator',
+    def __init__(self, width, height, title='Routes Generator',
                  resizable=(False, False)):
-        self.win = Tk()
-        self.win['bg'] = '#3761E8'
+        self.win = tk.Tk()
+        self.win['bg'] = '#285888'
         self.win.title(title)
-        self.win.geometry(f'{width}x{height}+200+200')
+        self.win.geometry(f'{width}x{height}')
         self.win.resizable(resizable[0], resizable[1])
 
-        self.odo = Entry(self.win, font='Consolas 12', width=10)
-        self.path_number = Entry(self.win, font='Consolas 12', width=10)
-        self.fuel = Entry(self.win, font='Consolas 12', width=10)
-        self.date = Entry(self.win, font='Consolas 12', width=10)
+        bg_image = Image.open('kas_logo.png')
+        self.bg_photo = ImageTk.PhotoImage(bg_image)
 
-        self.odo_label = Label(self.win, text='km',
-                               width=10, font=('Arial', 10))
-        self.number_label = Label(self.win, text='№ list: xxx',
-                                  width=10, font=('Arial', 10))
-        self.fuel_label = Label(self.win, text='ltr', width=10,
-                                font=('Arial', 10))
-        self.date_label = Label(self.win, text='mm/yyyy',
-                                width=10, font=('Arial', 10))
+        bg_label = tk.Label(self.win, image=self.bg_photo)
+        bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-        vehicles = [car for car, rate in VEHICLES.items()]
-        vehicles_var = StringVar(value=vehicles[0])
+        self.frame = tk.Frame(self.win)
 
-        self.vehicles_label = Label(self.win, text='Choose vehicle',
-                                    width=10, font=('Arial', 10))
-        self.vehicles = Combobox(self.win, values=vehicles, width=12,
-                                 state='readonly', textvariable=vehicles_var)
+        self.user_info_frame = tk.LabelFrame(self.frame, text='User info')
+        self.date_label = tk.Label(
+            self.user_info_frame,
+            text='Month / Year',
+            background='#285888',
+            font=('Candara', 12),
+            fg='white'
+        )
+        self.date_entry = tk.Entry(self.user_info_frame)
+
+        self.vehicles = ['Logan', 'Sportage']
+        self.vehicles_var = tk.StringVar(value=self.vehicles[0])
+        self.vehicles_label = tk.Label(
+            self.user_info_frame,
+            text='Vehicle',
+            background='#285888',
+            font=('Candara', 12),
+            fg='white'
+        )
+        self.vehicles_combobox = Combobox(
+            self.user_info_frame,
+            values=self.vehicles,
+            state='readonly',
+            textvariable=self.vehicles_var
+        )
+
+        self.data_info_frame = tk.LabelFrame(self.frame,
+                                             text='Data from last month')
+        self.odo_label = tk.Label(
+            self.data_info_frame,
+            text='Current ODO',
+            background='#285888',
+            font=('Candara', 12),
+            fg='white'
+        )
+        self.odo_entry = tk.Entry(self.data_info_frame)
+
+        self.fuel_label = tk.Label(
+            self.data_info_frame,
+            text='Current fuel',
+            background='#285888',
+            font=('Candara', 12),
+            fg='white'
+        )
+        self.fuel_entry = tk.Entry(self.data_info_frame)
+
+        self.path_list_label = tk.Label(
+            self.data_info_frame,
+            text='Path list',
+            background='#285888',
+            font=('Candara', 12),
+            fg='white'
+        )
+        self.path_list_spinbox = tk.Spinbox(
+            self.data_info_frame,
+            from_=1,
+            to=365
+        )
+
+        self.save_button = tk.Button(
+            self.data_info_frame,
+            text='Save',
+            width=16,
+            command=self.save_data,
+            relief=tk.RAISED,
+            font=('Arial black', 10)
+        )
+
+        self.days_button = tk.Button(
+            self.frame,
+            text='Open day\'s window',
+            width=16,
+            command=self.create_days_window,
+            relief=tk.SUNKEN,
+            font=('Candara', 12),
+            state=tk.DISABLED
+        )
 
     def run(self):
         self.setup_gui()
         self.win.mainloop()
 
     def setup_gui(self):
-        self.odo.grid(row=0, column=1)
-        self.path_number.grid(row=0, column=2)
-        self.fuel.grid(row=0, column=3)
-        self.date.grid(row=0, column=4)
 
-        self.odo_label.grid(row=1, column=1)
-        self.number_label.grid(row=1, column=2)
-        self.fuel_label.grid(row=1, column=3)
-        self.date_label.grid(row=1, column=4)
+        self.frame.configure(background='#285888')
+        self.frame.pack()
+        self.frame.pack_configure(side='bottom', pady=20)
 
-        self.vehicles_label.grid(row=0, column=5)
+        self.user_info_frame.configure(
+            background='#285888',
+            font=('Consolas', 12),
+            fg='white'
+        )
+        self.user_info_frame.grid(row=0, column=0, padx=15, pady=15)
 
-        self.vehicles.current(0)
-        self.vehicles.grid(row=1, column=5, padx=4)
-        self.vehicles.bind('<<ComboboxSelected>>', self.apply_vehicle)
+        self.date_label.grid(row=0, column=0)
+        self.date_entry.grid(row=1, column=0)
 
-        Button(self.win, text='Save', height=1, width=35,
-               command=self.save_data).\
-            grid(row=3, column=2, columnspan=2)
+        self.vehicles_combobox.current(0)
+        self.vehicles_combobox.bind('<<ComboboxSelected>>', self.apply_vehicle)
+        self.vehicles_label.grid(row=0, column=1)
+        self.vehicles_combobox.grid(row=1, column=1)
 
-        Button(self.win, text='Go to days--->',
-               height=1, width=35, command=self.create_days_window).\
-            grid(row=4, column=3, columnspan=2)
+        for widget in self.user_info_frame.winfo_children():
+            widget.grid_configure(padx=10, pady=10)
+
+        self.data_info_frame.configure(
+            background='#285888',
+            font=('Consolas', 12),
+            fg='white'
+        )
+        self.data_info_frame.grid(row=1, column=0, padx=15, pady=15)
+
+        self.odo_label.grid(row=0, column=0)
+        self.odo_entry.grid(row=1, column=0)
+
+        self.fuel_label.grid(row=0, column=1)
+        self.fuel_entry.grid(row=1, column=1)
+
+        self.path_list_label.grid(row=0, column=2)
+        self.path_list_spinbox.grid(row=1, column=2)
+
+        for widget in self.data_info_frame.winfo_children():
+            widget.grid_configure(padx=5, pady=10)
+
+        self.save_button.grid(row=2, column=1, pady=10)
+
+        self.days_button.grid(row=3, column=0, sticky='news', pady=10, padx=20)
 
     def save_data(self):
-        user_odo = int(self.odo.get())
-        user_path_number = int(self.path_number.get())
-        user_fuel = float(self.fuel.get())
-        user_date = self.date.get()
-        user_vehicle = self.apply_vehicle(None)
+        try:
+            user_odo = int(self.odo_entry.get())
+            user_path_number = int(self.path_list_spinbox.get())
+            user_fuel = float(self.fuel_entry.get())
+            user_date = self.date_entry.get()
+            user_vehicle = self.apply_vehicle(None)
 
-        data = {
-            "odo": user_odo,
-            "path_number": user_path_number,
-            "fuel": user_fuel,
-            "date": user_date,
-            "vehicle": user_vehicle
-        }
+            data = {
+                "odo": user_odo,
+                "path_number": user_path_number,
+                "fuel": user_fuel,
+                "date": user_date,
+                "vehicle": user_vehicle
+            }
 
-        file_path = os.path.abspath(os.path.join(USER_DIR, 'input.json'))
+            file_path = os.path.abspath(os.path.join(USER_DIR, 'input.json'))
 
-        with open(file_path, 'w') as f:
-            json.dump(data, f)
+            with open(file_path, 'w') as f:
+                json.dump(data, f)
+
+            self.days_button.configure(relief=tk.RAISED, state=tk.ACTIVE)
+
+        except ValueError:
+            messagebox.showwarning(
+                title='Error!',
+                message='One of the fields is incorrect!\n'
+                        'Here\'s a filling examples:\n\n'
+                        ' Date: mm/yyyy\n'
+                        ' ODO: 0 - 999999\n'
+                        ' Fuel: 00.00\n'
+                        ' Path list: 0 - 365'
+
+            )
 
     def apply_vehicle(self, event):
-        data = self.vehicles.get()
+        data = self.vehicles_var.get()
         return data
 
     def create_days_window(self, width=1000, height=800,
@@ -98,5 +200,5 @@ class MainWindow:
 
 
 if __name__ == '__main__':
-    window = MainWindow(650, 400)
+    window = MainWindow(491, 491)
     window.run()

@@ -6,3 +6,5 @@ kas/user_data/__pycache__/
 kas/scripts/__pycache__/
 kas/__pycache__/
 kas/database/__pycache__/
+output.pdf
+dist/
