@@ -1,5 +1,4 @@
 from kas.database import distances
-from kas.parser import parse
 
 
 class DistributeFuel:
@@ -117,9 +116,11 @@ class DistributeFuel:
             return None
 
         fuel_per_day = round((current_fuel - remainder) / counter, 2)
-        last_days = {key: fuel_per_day
-                     for key, value
-                     in self.inner[index].items()}
+        last_days = {
+            key: fuel_per_day
+            for key, value
+            in self.inner[index].items()
+        }
         fuel_remainder = round(current_fuel - (fuel_per_day * counter), 2)
 
         return [last_days, fuel_remainder]
@@ -184,8 +185,3 @@ class DistributeFuel:
                     current_fuel: float = last_days[1]
 
         return steps
-
-
-chunks = parse('chunks1.json', fixtures=True)
-fuel = DistributeFuel(chunks, 42.08)
-fuels = fuel.distribute()

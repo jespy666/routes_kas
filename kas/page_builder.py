@@ -5,9 +5,21 @@ class MakePage:
     """
     Render the page
     """
-    def __init__(self, day, number, odo_start, odo_end, cover,
-                 consumption, fuel_start, fuel_end, departure,
-                 arriving, steps, pdf):
+    def __init__(
+            self,
+            day,
+            number,
+            odo_start,
+            odo_end,
+            cover,
+            consumption,
+            fuel_start,
+            fuel_end,
+            departure,
+            arriving,
+            steps,
+            pdf
+    ):
 
         self.pdf = pdf
 
