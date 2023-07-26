@@ -1,22 +1,27 @@
 import tkinter as tk
 from tkinter.ttk import Combobox
+from tkinter import messagebox
+from PIL import Image, ImageTk
+
 import json
 import os
+import math
+from calendar import monthrange
+
 from kas.user_data import USER_DIR
 from kas.windows.days_window import DaysWindow
-from PIL import Image, ImageTk
-from tkinter import messagebox
 
 
 class MainWindow:
 
-    def __init__(self, width, height, title='Routes Generator',
-                 resizable=(False, False)):
+    days_count = math.inf
+
+    def __init__(self):
         self.win = tk.Tk()
-        self.win['bg'] = '#285888'
-        self.win.title(title)
-        self.win.geometry(f'{width}x{height}')
-        self.win.resizable(resizable[0], resizable[1])
+        self.win.title('Routes Generator')
+        self.win.geometry(f'{491}x{491}')
+        self.win.resizable(False, False)
+        self.win.configure(bg='#285888')
 
         bg_image = Image.open('kas_logo.png')
         self.bg_photo = ImageTk.PhotoImage(bg_image)
@@ -101,7 +106,7 @@ class MainWindow:
             command=self.create_days_window,
             relief=tk.SUNKEN,
             font=('Candara', 12),
-            state=tk.DISABLED
+            state=tk.ACTIVE
         )
 
     def run(self):
@@ -176,6 +181,8 @@ class MainWindow:
             with open(file_path, 'w') as f:
                 json.dump(data, f)
 
+            self.days_count = self.get_days_count(user_date)
+
             self.days_button.configure(relief=tk.RAISED, state=tk.ACTIVE)
 
         except ValueError:
@@ -194,11 +201,15 @@ class MainWindow:
         data = self.vehicles_var.get()
         return data
 
-    def create_days_window(self, width=1000, height=800,
-                           title='Days', resizable=(True, True)):
-        DaysWindow(self.win, width, height, title, resizable)
+    @staticmethod
+    def get_days_count(date: str):
+        month, year = date.split('/')[0], date.split('/')[1]
+        return monthrange(int(year), int(month))[1]
+
+    def create_days_window(self):
+        DaysWindow(self.win, self.days_count)
 
 
 if __name__ == '__main__':
-    window = MainWindow(491, 491)
+    window = MainWindow()
     window.run()
