@@ -1,10 +1,11 @@
 .idea/
 .venv/
-__pycashe__
-tests/__pycache__/
-kas/user_data/__pycache__/
-kas/scripts/__pycache__/
-kas/__pycache__/
-kas/database/__pycache__/
+*.pyc
+.__pycache__
 output.pdf
 dist/
+.coverage
+coverage.xml
+.pytest_cache/
+myenv/
+input.json
