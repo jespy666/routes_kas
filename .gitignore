@@ -8,4 +8,4 @@ dist/
 coverage.xml
 .pytest_cache/
 myenv/
-input.json
+kas/user_data/input.json
