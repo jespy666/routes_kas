@@ -28,7 +28,6 @@ class TestInnerView:
     @pytest.fixture
     def chunker(self):
         chunks = Chunked(data)
-        chunks.filter()
         return chunks.chunked()
 
     @pytest.fixture
