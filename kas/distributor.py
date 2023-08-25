@@ -1,4 +1,10 @@
-from kas.database import distances
+from kas.database.distances import DISTANCES_INSIDE_CITY,\
+    DISTANCES_OUTSIDE_CITY
+
+
+MAX_REFILL_TIME = 11
+MIN_PERMIT_TIME = 15
+MAX_FUEL_REMAINDER = 20
 
 
 class DistributeFuel:
@@ -7,70 +13,65 @@ class DistributeFuel:
         self.inner = inner
         self.fuel = fuel
 
+        self.current_fuel = fuel
+        self.fuels = []
+
     @staticmethod
     def calculate_min_required_fuel(point: str) -> float:
+        fuel_coefficient = 12.14 / 100
+        distances = DISTANCES_INSIDE_CITY
+        if point not in distances:
+            distances = DISTANCES_OUTSIDE_CITY
+            fuel_coefficient = 9.84 / 100
 
-        distance: list = [value for key, value
-                          in distances.DISTANCES_INSIDE_CITY.items()
-                          if key == point]
-
-        if not distance:
-            distance: list = [value for key, value
-                              in distances.DISTANCES_OUTSIDE_CITY.items()
-                              if key == point]
-            fuel: float = (9.84 / 100) * distance[0]
-        else:
-            fuel: float = (12.14 / 100) * distance[0]
-
+        distance = distances.get(point, 0)
+        fuel = fuel_coefficient * distance
         return round(fuel, 2)
 
-    @staticmethod
-    def calculate_fuel_per_step(current_fuel: float,
-                                min_fuel: float,
-                                step_length: int) -> float:
-
-        common_fuel: float = current_fuel - (min_fuel * 2)
-
-        return round(common_fuel / step_length, 2)
-
-    @staticmethod
-    def get_current_fuel(step: dict,
-                         refill: float,
-                         current_fuel: float) -> float:
-
-        refill_key = list(step.keys())[-1]
-        refill_consumption = step[refill_key]['ride']
-        consumption = 0
-        for key, value in step.items():
-            if isinstance(value, float):
-                consumption += value
-        consumption += refill_consumption
-        return round((current_fuel + refill) - consumption, 2)
-
-    def calculate_fuels(self, index: int, current_fuel: float,
-                        time: str, point: str) -> tuple | float:
-
-        min_fuel: float = self.calculate_min_required_fuel(point)
-        step_length: int = len(self.inner[index])
-
-        if step_length > 1:
-            match time:
-                case x if int(x.split(':')[0]) >= 11:
-                    refill_day = min_fuel * 2
-                    unrefillable_days = current_fuel / (step_length - 1)
-                    before_refill_day = unrefillable_days - min_fuel
-                case _:
-                    refill_day = (current_fuel / step_length) + min_fuel
-                    unrefillable_days = current_fuel / (step_length - 1)
-                    before_refill_day = unrefillable_days - min_fuel
-            return refill_day, before_refill_day, unrefillable_days
-
-        elif step_length == 1:
-            match time:
-                case x if int(x.split(':')[0]) >= 11:
+    def calculate_last_days(self, time: str, point: str, refill: float):
+        min_fuel = self.calculate_min_required_fuel(point)
+        step_length = len(self.inner[-1])
+        hour = int(time.split(':')[0])
+        fuel_value = (self.current_fuel + refill) - min_fuel
+        if step_length == 1:
+            match hour:
+                case h if MAX_REFILL_TIME < h < MIN_PERMIT_TIME:
                     return min_fuel * 2
                 case _:
-                    return current_fuel - (min_fuel * 2)
+                    return fuel_value - MAX_FUEL_REMAINDER
+        else:
+            match hour:
+                case h if MAX_REFILL_TIME < h < MIN_PERMIT_TIME:
+                    refill_day = min_fuel * 2
+                    ordinary_day = pre_refill_day =\
+                        (fuel_value - MAX_FUEL_REMAINDER) / (step_length - 1)
+                case _:
+                    refill_day = ordinary_day = pre_refill_day =\
+                        (fuel_value + min_fuel - MAX_FUEL_REMAINDER) /\
+                        step_length
+            return refill_day, ordinary_day, pre_refill_day
+
+    def calculate_fuels(self, index: int, time: str, point: str):
+        min_fuel = self.calculate_min_required_fuel(point)
+        step_length = len(self.inner[index])
+        hour = int(time.split(':')[0])
+        if step_length == 1:
+            match hour:
+                case h if MAX_REFILL_TIME < h < MIN_PERMIT_TIME:
+                    return min_fuel * 2
+                case _:
+                    return self.current_fuel - (min_fuel * 2)
+        else:
+            match hour:
+                case h if MAX_REFILL_TIME < h < MIN_PERMIT_TIME:
+                    refill_day = min_fuel * 2
+                    unrefillable_days = self.current_fuel / (step_length - 1)
+                    before_refill_day = unrefillable_days - min_fuel
+                case _:
+                    refill_day = (self.current_fuel / step_length) + min_fuel
+                    unrefillable_days = self.current_fuel / (step_length - 1)
+                    before_refill_day = unrefillable_days - min_fuel
+            return refill_day, before_refill_day, unrefillable_days
 
     def distribute_step(self, index: int, time: str, point: str, refill: float,
                         refill_day: float,
@@ -87,10 +88,10 @@ class DistributeFuel:
             'refill_point': point,
             'refill': refill
         }
-        result: dict = {}
+        result = {}
 
-        step: dict = self.inner[index]
-        keys: list = list(step.keys())
+        step = self.inner[index]
+        keys = list(step.keys())
         for _ in keys:
 
             if len(keys) == 1:
@@ -107,81 +108,70 @@ class DistributeFuel:
 
         return dict(sorted(result.items(), key=lambda x: int(x[0])))
 
-    def distribute_last_days(self, index: int,
-                             counter: int,
-                             current_fuel: float,
-                             remainder=20) -> list | None:
+    def set_current_fuel(self, step: dict, refill: float):
+        refill_key = list(step.keys())[-1]
+        refill_consumption = step[refill_key]['ride']
+        consumption = 0
+        for key, value in step.items():
+            if isinstance(value, float):
+                consumption += value
+        consumption += refill_consumption
+        fuel = round((self.current_fuel + refill) - consumption, 2)
+        self.current_fuel = fuel
 
-        if current_fuel < remainder:
-            return None
+    def built_in(self, index: int, time: str, point: str, refill: float,
+                 calculated: tuple | float, day: str):
+        if isinstance(calculated, tuple):
+            refill_, before_refill_, unrefill_ = calculated
+            built = self.distribute_step(
+                index,
+                time,
+                point,
+                refill,
+                refill_,
+                before_refill_,
+                unrefill_
+            )
+        else:
+            built = {
+                day:
+                    {
+                        'ride': calculated,
+                        'refill_time': time,
+                        'refill_point': point,
+                        'refill': refill
+                    }
+            }
+        self.fuels.append(built)
+        self.set_current_fuel(built, refill)
 
-        fuel_per_day = round((current_fuel - remainder) / counter, 2)
-        last_days = {
-            key: fuel_per_day
-            for key, value
-            in self.inner[index].items()
-        }
-        fuel_remainder = round(current_fuel - (fuel_per_day * counter), 2)
-
-        return [last_days, fuel_remainder]
-
-    def distribute(self) -> list:
-
-        current_fuel: float = self.fuel
-
-        steps: list = []
-        for chunk in self.inner:
-
-            index: int = self.inner.index(chunk)
-            counter: int = 0
-            for key, value in chunk.items():
-
+    def distribute_last_days(self, chunk: dict):
+        if all(not isinstance(value, dict) for value in chunk.values()):
+            if self.current_fuel > MAX_FUEL_REMAINDER:
+                last_fuel = (self.current_fuel - MAX_FUEL_REMAINDER) \
+                            / len(chunk)
+                last_days = {key: last_fuel for key in chunk.keys()}
+                self.fuels.append(last_days)
+        else:
+            for day, value in chunk.items():
                 if isinstance(value, dict):
+                    time = value.get('time')
+                    point = value.get('point')
+                    refill = float(value.get('fuel'))
+                    calculated = self.calculate_last_days(time, point, refill)
+                    self.built_in(-1, time, point, refill, calculated, day)
 
-                    time: str = value['time']
-                    point: str = value['point']
-                    refill: str = value['fuel']
-
-                    calculated: tuple | float = self.calculate_fuels(
-                        index, current_fuel, time, point)
-                    match calculated:
-                        case c if isinstance(c, tuple):
-                            refill_day, \
-                                before_refill_day, \
-                                unrefillable_days = calculated
-                            built = self.distribute_step(
-                                index,
-                                time,
-                                point,
-                                float(refill),
-                                refill_day,
-                                before_refill_day,
-                                unrefillable_days)
-                        case _:
-                            built = {
-                                key: {
-                                    'ride': calculated,
-                                    'refill_time': time,
-                                    'refill_point': point,
-                                    'refill': float(refill)
-                                }
-                            }
-                    steps.append(built)
-
-                    current_fuel = self.get_current_fuel(steps[-1],
-                                                         float(refill),
-                                                         float(current_fuel))
-                    counter = 0
-
-                else:
-                    counter += 1
-
-            if counter > 0:
-
-                last_days: list | None = self.distribute_last_days(
-                    index, counter, current_fuel)
-                if last_days:
-                    steps.append(last_days[0])
-                    current_fuel: float = last_days[1]
-
-        return steps
+    def distribute(self):
+        for chunk in self.inner:
+            index = self.inner.index(chunk)
+            if index == len(self.inner) - 1:
+                self.distribute_last_days(chunk)
+                return self.fuels
+            for day, value in chunk.items():
+                if isinstance(value, dict):
+                    time = value.get('time')
+                    point = value.get('point')
+                    refill = float(value.get('fuel'))
+                    calculated = self.calculate_fuels(index, time, point)
+                    self.built_in(index, time, point, refill, calculated, day)
+        return self.fuels
