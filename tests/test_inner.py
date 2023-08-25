@@ -2,7 +2,7 @@ from kas.parser import parse
 
 from kas.chunker import Chunked
 from kas.distributor import DistributeFuel
-from kas.generator import GenerateRoutes
+from kas.generator.generator import GenerateRoutes
 from kas.departures import get_departures
 
 import pytest
@@ -47,7 +47,7 @@ class TestInnerView:
             path_number
         )
 
-        return routes.generate_routes()
+        return routes.generate()
 
     def test_inner_view(self, chunker, distributer, generator):
         assert chunker == exp_chunks
