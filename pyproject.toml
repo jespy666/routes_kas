@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "routes-kas"
-version = "0.1.0"
+version = "0.0.1"
 description = ""
 authors = ["Georgievsky <jespy.kz@gmail.com>"]
 readme = "README.md"
