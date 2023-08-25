@@ -13,6 +13,11 @@
 ## About
 The utility is designed for employees of the company "KIRISHIAVTOSERVIS" generating routes for company vehicles based on user-provided data for each day. The utility aims to reduce working time spent on routine distance calculations and matching searches. It streamlines the process of route planning by automating the calculation of distances and finding suitable matches. This not only enhances efficiency but also eliminates the need for manual route optimization. By utilizing this utility, employees can focus more on their core tasks while ensuring optimized travel routes for the company's vehicles.
 
+## Stack
+- <img src="https://img.shields.io/badge/python%203.10-blue" alt="Python">  
+- <img src="https://img.shields.io/badge/poetry-green" alt="Poetry">
+- <img src="https://img.shields.io/badge/PyTest-red" alt="PyTest">
+
 ## Documentation
 
 1. Compile
