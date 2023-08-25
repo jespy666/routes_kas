@@ -21,9 +21,10 @@ The utility is designed for employees of the company "KIRISHIAVTOSERVIS" generat
 ## Documentation
 
 1. Compile
-    - Compile into .exe file. Here's an example of installation using auto-py-to-exe:  
-`auto-py-to-exe start_window.py`(being in kas/windows)
-    - Or direct command: `pyinstaller --noconfirm --onefile --windowed --collect-all "kas" --hidden-import "fpdf"  "your/path/to/project/start_window.py"`
+    - Compile into .exe file. Here's an example of installation using `auto-py-to-exe`:  
+         - `auto-py-to-exe start_window.py`  from /kas/windows
+    - Or direct command with `pyinstaller`:
+         - `pyinstaller --noconfirm --onefile --windowed --collect-all "kas" --hidden-import "fpdf"  "your/path/to/project/kas/windows/start_window.py"`
 2. Uses
     - Open the compiled application. Example to fill main window:
       <p align="center">
