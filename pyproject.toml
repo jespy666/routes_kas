@@ -14,7 +14,7 @@ pytest = "^7.3.1"
 pytest-cov = "^4.1.0"
 
 [tool.poetry.scripts]
-routes = "kas.windows.start_window:main"
+routes = "kas.scripts.generate_routes:main"
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.0.0"
