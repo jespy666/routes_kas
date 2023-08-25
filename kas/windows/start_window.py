@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter.ttk import Combobox
 from tkinter import messagebox
-from PIL import Image, ImageTk
 
 import json
 import os
@@ -22,12 +21,6 @@ class MainWindow:
         self.win.geometry(f'{491}x{491}')
         self.win.resizable(False, False)
         self.win.configure(bg='#285888')
-
-        bg_image = Image.open('kas_logo.png')
-        self.bg_photo = ImageTk.PhotoImage(bg_image)
-
-        bg_label = tk.Label(self.win, image=self.bg_photo)
-        bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         self.frame = tk.Frame(self.win)
 

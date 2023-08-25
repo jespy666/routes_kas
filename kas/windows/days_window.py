@@ -4,7 +4,7 @@ from tkinter import messagebox
 from kas.parser import parse
 from kas.chunker import Chunked
 from kas.distributor import DistributeFuel
-from kas.generator import GenerateRoutes
+from kas.generator.generator import GenerateRoutes
 from kas.departures import get_departures
 from kas.page_builder import write_to_pdf
 
@@ -155,7 +155,6 @@ class DaysWindow:
                 self.entries.pop(index)
             self.entries.append({str(day): data})
 
-            print(self.entries)
             self.buttons[day - 1].configure(
                 bg='green',
                 fg='white'
@@ -173,9 +172,7 @@ class DaysWindow:
         departures = get_departures(data)
 
         chunks = Chunked(data)
-
         fuels = DistributeFuel(chunks.chunked(), initial_fuel)
-
         generated = GenerateRoutes(
             fuels.distribute(),
             initial_fuel,
@@ -184,7 +181,7 @@ class DaysWindow:
             path_list
         )
 
-        output = generated.generate_routes()[0]
+        output = generated.generate()[0]
 
         self.routes = output
 
